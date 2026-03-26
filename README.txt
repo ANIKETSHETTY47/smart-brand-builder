@@ -1,7 +1,7 @@
 Smart Brand & Domain Availability Platform
 MSc Cloud Computing CA1 Assignment - NCI
 
-Author: Student
+Author: Aniket Shetty
 Date: March 2026
 
 Project Structure:
