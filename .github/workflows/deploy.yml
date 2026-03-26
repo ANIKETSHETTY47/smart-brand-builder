@@ -64,6 +64,6 @@ jobs:
 
     - name: Sync Frontend to S3
       run: |
-        aws s3 sync frontend/ s3://brand-domain-frontend-bucket \
+        aws s3 sync frontend/ s3://brand-domain-frontend-bucket-32550 \
           --exclude ".DS_Store" \
           --delete
