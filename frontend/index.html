@@ -52,6 +52,7 @@
             margin-bottom: 1.5rem;
             background: linear-gradient(135deg, var(--primary), #ec4899);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -276,6 +277,10 @@
                 <input type="text" id="business_name" required placeholder="e.g. Nexus, Quantum Tech, FitLife...">
             </div>
             <div class="form-group">
+                <label for="slogan">Slogan / Tagline (Optional)</label>
+                <input type="text" id="slogan" placeholder="e.g. Innovating the future">
+            </div>
+            <div class="form-group">
                 <label for="category">Industry / Category</label>
                 <select id="category" required>
                     <option value="" disabled selected>Select a category</option>
@@ -347,6 +352,7 @@
         e.preventDefault();
         
         const businessName = document.getElementById('business_name').value.trim();
+        const slogan = document.getElementById('slogan').value.trim();
         const category = document.getElementById('category').value;
 
         if(!businessName || !category) return;
@@ -362,6 +368,7 @@
                 method: 'POST',
                 body: JSON.stringify({
                     business_name: businessName,
+                    slogan: slogan,
                     category: category
                 })
             });

@@ -40,6 +40,7 @@ def lambda_handler(event, context):
         elif action == 'generate':
             business_name = body.get('business_name')
             category = body.get('category')
+            slogan = body.get('slogan', '')
             
             if not business_name or not category:
                 return format_response(400, {"error": "Bad Request", "message": "business_name and category are required"})
@@ -53,7 +54,7 @@ def lambda_handler(event, context):
             suggested_domains = domain_logic.score_and_sort_domains(domain_results)
             
             branding = brand_logic.get_branding_attributes(category)
-            svg_content = logo_client.generate_logo(business_name, branding['style'], branding['icon_type'])
+            svg_content = logo_client.generate_logo(business_name, branding['style'], branding['icon_type'], slogan)
             
             logo_key = storage.save_svg_to_s3(request_id, svg_content)
             storage.save_result_to_dynamodb(

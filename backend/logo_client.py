@@ -49,16 +49,20 @@ def get_fallback_svg(company_name, style, icon_type):
     
     return svg_content
 
-def generate_logo(company_name, style, icon_type):
+def generate_logo(company_name, style, icon_type, slogan=""):
     """
     Calls the peer Logo Generator API synchronously.
     Graceful fallback: returns a placeholder SVG upon timeout or error.
     """
     colors = STYLE_COLORS.get(style, {"primary": "#3B82F6", "secondary": "#1E3A5F"})
     
+    # Django REST standard serializers with allow_blank=False reject empty strings ""
+    # We substitute a single space " " to bypass this validation while keeping the logo clean.
+    safe_slogan = slogan if slogan else " "
+    
     payload = {
         "company_name": company_name,
-        "tagline": "",
+        "tagline": safe_slogan,
         "style": style,
         "icon_type": icon_type,
         "primary_color": colors["primary"],
