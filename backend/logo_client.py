@@ -67,7 +67,12 @@ def generate_logo(company_name, style, icon_type):
     
     try:
         response = requests.post(PEER_API_URL, json=payload, timeout=15)
-        response.raise_for_status()
+        
+        # If it's a 4xx or 5xx error, print the exact validation error from Django!
+        if not response.ok:
+            error_details = response.text
+            raise Exception(f"Peer API Error ({response.status_code}): {error_details} - Payload sent: {payload}")
+            
         data = response.json()
         
         if "svg" in data and data["svg"]:
