@@ -66,17 +66,16 @@ def generate_logo(company_name, style, icon_type):
     }
     
     try:
-        response = requests.post(PEER_API_URL, json=payload, timeout=8)
+        response = requests.post(PEER_API_URL, json=payload, timeout=15)
         response.raise_for_status()
         data = response.json()
         
         if "svg" in data and data["svg"]:
             return data["svg"]
         else:
-            print("Warning: Peer API returned success but no SVG data. Using fallback.")
-            return get_fallback_svg(company_name, style, icon_type)
+            raise Exception(f"Peer API returned no SVG data. Response was: {data}")
             
     except Exception as e:
-        # Logging to CloudWatch gracefully handled by simple print in Lambda runtime
-        print(f"Error calling Peer Logo API: {e}. Falling back to placeholder.")
-        return get_fallback_svg(company_name, style, icon_type)
+        # Fallback explicitly commented out to force error discovery
+        print(f"CRITICAL: Error calling Peer Logo API: {e}")
+        raise e
