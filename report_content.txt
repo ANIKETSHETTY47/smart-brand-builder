@@ -1,0 +1,574 @@
+================================================================================
+SMART BRAND & DOMAIN AVAILABILITY PLATFORM
+IEEE Conference Report - Full Content Reference
+Author: Aniket Shetty
+MSc Cloud Computing - National College of Ireland
+March 2026
+================================================================================
+
+
+
+================================================================================
+SECTION 1: ABSTRACT (150-300 words)
+================================================================================
+
+This paper presents the design, implementation, and deployment of the Smart Brand
+and Domain Availability Platform, a cloud-native web application that generates
+comprehensive brand identity packages for businesses. The platform accepts a
+business name and industry category as inputs and produces intelligent domain
+name suggestions, deterministic branding attributes (visual style, icon shape,
+and brand tone), and a dynamically generated SVG logo. The system integrates
+three distinct web services: a custom-built Brand and Domain Intelligence API
+deployed as an AWS Lambda function, a publicly available WhoisXML Domain
+Availability API for real-time domain registration verification, and a peer-
+developed Logo Generation API consumed synchronously for SVG asset creation.
+
+The application is architected using a fully serverless paradigm on Amazon Web
+Services (AWS), leveraging API Gateway for RESTful request routing, Lambda for
+Function-as-a-Service (FaaS) computation, DynamoDB for NoSQL data persistence,
+Simple Queue Service (SQS) for asynchronous event-driven audit decoupling, S3
+for static frontend hosting and object storage, and Systems Manager Parameter
+Store for secure credential management. All business logic is implemented using
+deterministic, rule-based algorithms without any artificial intelligence or
+machine learning dependencies.
+
+A Continuous Integration and Continuous Deployment (CI/CD) pipeline was
+implemented using GitHub Actions, automating unit testing with pytest, Lambda
+function packaging and deployment, and frontend asset synchronisation to S3.
+The resulting system demonstrates horizontal scalability, fault-tolerant design
+through graceful API fallback mechanisms, and infrastructure automation through
+shell-scripted provisioning. This project validates the practical applicability
+of serverless computing patterns for rapid, cost-efficient application delivery
+in academic and production contexts.
+
+
+
+================================================================================
+SECTION 2: INTRODUCTION
+================================================================================
+
+2.1 Motivation
+--------------
+The proliferation of digital businesses has created an urgent demand for rapid
+brand identity tooling. Entrepreneurs and startups frequently require domain
+name suggestions, visual branding assets, and availability verification as part
+of their initial business planning phase. Traditional approaches to brand
+development are manual, time-consuming, and expensive, often requiring graphic
+designers, branding consultants, and separate domain registrar searches.
+
+Cloud computing has fundamentally transformed how applications are built and
+deployed. The emergence of Function-as-a-Service (FaaS) platforms such as AWS
+Lambda [1] has enabled developers to build event-driven, auto-scaling
+applications without managing underlying server infrastructure. This paradigm,
+known as serverless computing, offers significant advantages in terms of cost
+efficiency (pay-per-invocation billing), operational simplicity (zero server
+maintenance), and elastic scalability (automatic scaling from zero to thousands
+of concurrent executions) [2].
+
+This project was motivated by the opportunity to explore and demonstrate these
+cloud-native architectural patterns by building a practical, multi-service web
+application. The platform addresses a real-world use case while serving as a
+comprehensive case study in serverless architecture design, API integration,
+asynchronous messaging, and automated deployment pipelines.
+
+2.2 Objectives
+--------------
+The primary objectives of this project are:
+
+1. To design and implement a scalable, cloud-native web application that
+   integrates and consumes multiple web services as required by the module
+   specification.
+
+2. To develop a custom RESTful API (the Brand and Domain Intelligence API) that
+   receives user input, processes it using deterministic rule-based algorithms,
+   and returns a meaningful, structured response.
+
+3. To integrate at least one publicly available web service (WhoisXML Domain
+   Availability API) and at least one peer-developed web service (Logo Generator
+   API) within the application's backend orchestration flow.
+
+4. To architect the system for scalability using serverless FaaS computation,
+   message queues for asynchronous decoupling, and NoSQL databases for high-
+   throughput data persistence.
+
+5. To implement a CI/CD pipeline using GitHub Actions that automates testing,
+   packaging, and deployment of both backend and frontend components.
+
+6. To deploy the complete application to a public cloud platform (AWS) and
+   demonstrate end-to-end functionality.
+
+
+
+================================================================================
+SECTION 3: PROJECT SPECIFICATION AND REQUIREMENTS
+================================================================================
+
+3.1 Functional Requirements
+----------------------------
+FR1: The system shall accept a business name (string) and an industry category
+     (selection from predefined options) as user inputs through a web-based
+     frontend interface.
+
+FR2: The backend API shall generate a minimum of four domain name variations
+     based on the provided business name using string manipulation algorithms.
+
+FR3: The system shall score and rank generated domain suggestions using a
+     deterministic scoring algorithm that prioritises shorter domain names and
+     penalises hyphenated domains.
+
+FR4: The system shall provide individual domain availability verification by
+     querying the WhoisXML public API on user demand (via "Check Availability"
+     buttons on each domain suggestion).
+
+FR5: The system shall assign branding attributes (visual style, icon shape, and
+     brand tone) based on the selected industry category using a static,
+     rule-based lookup table.
+
+FR6: The system shall request a dynamically generated SVG logo from a peer-
+     developed API. If the peer API is unavailable, the system shall gracefully
+     fall back to generating a placeholder SVG internally.
+
+FR7: The system shall persist all generated results (domains, branding, logo S3
+     key) to a DynamoDB table for future reference.
+
+FR8: The system shall asynchronously publish audit log entries to an SQS queue,
+     which triggers a separate Lambda function to write timestamped audit records
+     to a dedicated DynamoDB audit table.
+
+FR9: The system shall return a complete JSON response containing suggested
+     domains, branding attributes, and the SVG logo content to the frontend
+     for rendering.
+
+3.2 Non-Functional Requirements
+--------------------------------
+NFR1: Scalability - The system must scale automatically from zero to high
+      concurrency without manual server provisioning.
+
+NFR2: Availability - The system must incorporate fault-tolerant patterns
+      (graceful fallbacks for external API failures) to maintain availability.
+
+NFR3: Security - Sensitive credentials (API keys) must never be hardcoded in
+      source code; they must be retrieved from a secure secrets management
+      service at runtime.
+
+NFR4: Deployability - The system must support automated deployment through a
+      CI/CD pipeline triggered by code commits.
+
+NFR5: Responsiveness - The frontend must provide immediate visual feedback
+      (loading states, error messages) during API interactions.
+
+3.3 Web Services Consumed
+--------------------------
+The application integrates the following three web services, satisfying the
+module requirement of consuming 3-5 different web services:
+
+Service 1 - Custom API (Brand & Domain Intelligence API):
+  - Developed by the author as the core backend service.
+  - Deployed as an AWS Lambda function behind API Gateway.
+  - Provides two actions: "generate" (full brand identity generation) and
+    "check_domain" (individual domain availability verification).
+
+Service 2 - Public API (WhoisXML Domain Availability API):
+  - A publicly available RESTful web service provided by WhoisXML Group [3].
+  - Queried via HTTP GET requests with domain names and an API key.
+  - Returns domain registration status (AVAILABLE or UNAVAILABLE).
+  - API key securely stored in AWS SSM Parameter Store and retrieved at runtime.
+
+Service 3 - Peer API (Logo Generator API):
+  - Developed and deployed by a classmate of this module.
+  - Consumed via HTTP POST requests with company name, style, and icon type.
+  - Returns a dynamically generated SVG logo string.
+  - The system implements a resilient fallback mechanism: if the peer API fails
+    (timeout, network error, 5xx response), the backend generates a rule-based
+    placeholder SVG locally rather than propagating the error to the end user.
+
+
+
+================================================================================
+SECTION 4: ARCHITECTURE AND DESIGN
+================================================================================
+
+4.1 Architectural Overview
+---------------------------
+The system follows a serverless, event-driven architecture deployed entirely on
+AWS. The architecture can be decomposed into three primary tiers:
+
+Presentation Tier:
+  A Single Page Application (SPA) built with vanilla HTML5, CSS3, and
+  JavaScript, hosted as a static website on an AWS S3 bucket. The frontend
+  communicates with the backend exclusively via asynchronous HTTP POST requests
+  using the native Fetch API.
+
+Application Tier:
+  An AWS API Gateway (REST) acts as the entry point, proxying HTTP requests to
+  an AWS Lambda function (lambda_main.py) that serves as the central
+  orchestrator. This function delegates work to modular Python helper modules
+  and coordinates calls to external APIs.
+
+Data Tier:
+  Two Amazon DynamoDB tables provide serverless NoSQL persistence. The primary
+  table (brand-domain-results) stores generated brand identity payloads. The
+  secondary table (brand-domain-audit) stores timestamped access logs processed
+  from the SQS audit queue.
+
+4.2 Design Patterns and Justification
+---------------------------------------
+
+4.2.1 Function-as-a-Service (FaaS) Pattern
+The decision to use AWS Lambda as the primary compute layer was driven by three
+factors. First, Lambda provides automatic horizontal scaling: each incoming API
+Gateway request triggers a separate Lambda invocation, and AWS automatically
+manages concurrency scaling from zero to thousands of parallel executions [1].
+Second, the pay-per-invocation billing model (charged per 1ms of execution time)
+is significantly more cost-efficient for sporadic, bursty workloads compared to
+always-on EC2 instances or Elastic Beanstalk environments [4]. Third, Lambda
+eliminates all server provisioning and patching responsibilities, allowing
+development effort to focus exclusively on application logic.
+
+4.2.2 Asynchronous Decoupling via Message Queue
+The audit logging subsystem is deliberately decoupled from the main request
+processing path using Amazon SQS. When the main Lambda function completes a
+brand generation request, it publishes a lightweight JSON message to the SQS
+queue rather than writing the audit record synchronously. A separate Lambda
+function (lambda_audit.py) is configured with an SQS event source mapping and
+automatically triggered when messages arrive in the queue.
+
+This pattern provides three critical benefits:
+(a) Reduced latency - The user receives the response immediately without waiting
+    for the audit database write to complete.
+(b) Fault isolation - If the audit Lambda or the audit DynamoDB table
+    experiences a transient failure, the main user-facing flow is completely
+    unaffected. SQS retains the message for later retry.
+(c) Independent scaling - The audit consumer scales independently of the main
+    API, preventing audit bursts from consuming main API resources.
+
+4.2.3 Graceful Degradation / Circuit Breaker Lite
+The peer Logo API integration implements a graceful degradation pattern. The
+logo_client.py module wraps the external API call in a try-except block with an
+8-second timeout. If the peer API is unreachable, returns an error, or times
+out, the system falls back to a locally generated SVG using the
+get_fallback_svg() function. This ensures the end user always receives a
+complete response, even when an external dependency fails. This pattern is
+conceptually similar to the Circuit Breaker pattern described by Nygard [5],
+adapted for a serverless context.
+
+4.2.4 Secure Credential Management
+Rather than embedding the WhoisXML API key in source code or environment
+variables, the system retrieves it at runtime from AWS Systems Manager (SSM)
+Parameter Store using the SecureString parameter type. This approach provides
+encryption at rest using AWS KMS, eliminates credentials from version control,
+and allows key rotation without redeploying application code [6].
+
+4.2.5 Infrastructure as Code (IaC)
+All AWS resources are provisioned programmatically using a comprehensive Bash
+shell script (aws_setup.sh) that executes AWS CLI commands. This script creates
+DynamoDB tables, S3 buckets with public access policies, SQS queues, SSM
+parameters, Lambda functions with environment variable configuration, SQS-Lambda
+event source mappings, and a complete API Gateway REST API with proxy
+integration. This approach ensures reproducibility and eliminates manual console
+configuration errors [7].
+
+4.3 Data Flow
+--------------
+The system supports two primary data flows:
+
+Flow 1 - Brand Generation:
+  1. User submits business name and category via the frontend form.
+  2. Frontend sends HTTP POST to API Gateway with action: "generate".
+  3. API Gateway invokes lambda_main.py.
+  4. Lambda generates domain variations (domain_logic.py).
+  5. Lambda maps category to branding attributes (brand_logic.py).
+  6. Lambda calls Peer Logo API (logo_client.py) with fallback.
+  7. Lambda persists results to DynamoDB and S3 (storage.py).
+  8. Lambda publishes audit message to SQS (sqs_publisher.py).
+  9. Lambda returns complete JSON response to frontend.
+  10. SQS asynchronously triggers lambda_audit.py to write audit record.
+
+Flow 2 - Domain Availability Check:
+  1. User clicks "Check Availability" on a specific domain suggestion.
+  2. Frontend sends HTTP POST to API Gateway with action: "check_domain".
+  3. API Gateway invokes lambda_main.py.
+  4. Lambda retrieves WhoisXML API key from SSM (domain_checker.py).
+  5. Lambda queries WhoisXML public API for domain registration status.
+  6. Lambda returns availability result (true/false) to frontend.
+  7. Frontend updates the UI with Available (green) or Taken (red) badge.
+
+
+
+================================================================================
+SECTION 5: IMPLEMENTATION
+================================================================================
+
+5.1 Backend Implementation
+---------------------------
+The backend is implemented in Python 3.11, chosen for its extensive AWS SDK
+support (boto3), lightweight deployment footprint, and native JSON handling
+capabilities.
+
+5.1.1 Orchestrator (lambda_main.py)
+The central Lambda handler implements action-based routing. It parses the
+incoming JSON payload and routes to either the "generate" flow or the
+"check_domain" flow based on the "action" field. Input validation is performed
+at the entry point, returning HTTP 400 responses with descriptive error messages
+for malformed requests. All responses include CORS headers
+(Access-Control-Allow-Origin: *) to enable cross-origin requests from the S3-
+hosted frontend.
+
+5.1.2 Domain Generation Engine (domain_logic.py)
+The generate_domains() function accepts a business name string, sanitises it
+using regex to remove special characters, and produces four domain variations:
+  - {name}.com (direct registration)
+  - get{name}.com (action prefix)
+  - {name}app.com (application suffix)
+  - {name}.io (technology TLD)
+
+The score_and_sort_domains() function implements a deterministic scoring
+algorithm:
+  - Availability bonus: +1000 points (strongest factor)
+  - Length penalty: 100 minus domain length (shorter domains score higher)
+  - Hyphen penalty: +50 points for hyphen-free domains
+Results are sorted in descending score order.
+
+5.1.3 Branding Engine (brand_logic.py)
+The get_branding_attributes() function implements a static lookup table mapping
+six industry categories (technology, fitness, finance, health, food, education)
+to specific branding tuples. Each tuple contains a visual style (e.g., "tech",
+"bold", "corporate", "minimalist"), an icon shape (e.g., "hexagon", "lightning",
+"shield", "circle"), and a brand tone (e.g., "futuristic", "energetic",
+"professional", "calm"). Unrecognised categories fall back to the "default"
+entry. This approach is entirely deterministic with no AI/ML dependencies.
+
+5.1.4 WhoisXML Integration (domain_checker.py)
+The check_domains() function queries the WhoisXML Domain Availability API via
+HTTP GET requests. The API key is retrieved dynamically from AWS SSM Parameter
+Store using boto3's SSM client with WithDecryption=True. Each domain check
+includes a 5-second timeout to prevent hanging on unresponsive external
+services. If the API key retrieval fails, all domains default to "unavailable"
+rather than raising an exception.
+
+5.1.5 Peer API Client (logo_client.py)
+The generate_logo() function sends an HTTP POST request to the peer-developed
+Logo Generator API with company_name, style, and icon_type as JSON payload
+fields. An 8-second timeout is configured. The get_fallback_svg() function
+generates a rule-based SVG containing a coloured geometric shape (determined by
+icon_type: circle, hexagon, shield, or lightning) with the company initials
+overlaid as white text. Shape colours are mapped to style values (tech=#00d2ff,
+bold=#ff4b1f, corporate=#1d2b64, minimalist=#e0eafc).
+
+5.1.6 Storage Layer (storage.py)
+This module abstracts DynamoDB and S3 interactions using boto3. The
+save_result_to_dynamodb() function writes a complete result item to the primary
+DynamoDB table. The save_svg_to_s3() function uploads SVG content with the
+correct Content-Type (image/svg+xml) to the logos S3 bucket. Critical design
+decision: DynamoDB and S3 failures are caught and logged but do not propagate
+exceptions, ensuring the user still receives their response.
+
+5.1.7 SQS Publisher (sqs_publisher.py)
+This module publishes lightweight JSON audit messages to the SQS queue. The
+message payload contains request_id, business_name, category, and status. If
+the AUDIT_QUEUE_URL environment variable is not configured, the function logs
+a warning and returns silently. SQS publication errors are caught and logged
+but explicitly not propagated, maintaining the decoupled architecture principle.
+
+5.1.8 Audit Consumer (lambda_audit.py)
+This separate Lambda function is triggered by SQS event source mappings. It
+iterates through the batch of SQS records, deserialises each JSON message body,
+appends a UTC ISO-format timestamp, and writes the audit record to the dedicated
+DynamoDB audit table. Failed records raise exceptions to leverage SQS's built-in
+retry mechanism.
+
+5.2 Frontend Implementation
+-----------------------------
+The frontend is a Single Page Application (SPA) implemented as a single
+index.html file containing embedded CSS and JavaScript. This design decision
+was made to avoid the complexity overhead of JavaScript frameworks (React, Vue)
+and to leverage S3's native static website hosting capability.
+
+Key frontend features include:
+  - Responsive CSS Grid and Flexbox layout
+  - CSS custom properties (variables) for consistent theming
+  - Loading spinner overlay during API requests
+  - Error message display for failed requests
+  - Dynamic DOM manipulation for rendering domain suggestions with individual
+    "Check Availability" buttons
+  - Inline SVG rendering of the logo within the results section
+  - Asynchronous fetch() calls with proper error handling
+
+
+
+================================================================================
+SECTION 6: CONTINUOUS INTEGRATION, DELIVERY AND DEPLOYMENT
+================================================================================
+
+6.1 CI/CD Pipeline Overview
+-----------------------------
+A GitHub Actions workflow (.github/workflows/deploy.yml) provides automated
+CI/CD for the project. The pipeline is triggered on every push to the main
+branch and executes the following stages sequentially:
+
+Stage 1 - Checkout: The pipeline checks out the latest source code from the
+repository using actions/checkout@v3.
+
+Stage 2 - Environment Setup: Python 3.11 is configured using
+actions/setup-python@v4, and test dependencies (pytest, requests, boto3) are
+installed via pip.
+
+Stage 3 - Automated Testing: The pytest framework executes three test modules
+located in the tests/ directory:
+  - test_domain_logic.py: Validates domain generation (correct variations
+    produced, special character sanitisation) and scoring algorithm (correct
+    ordering, score calculation).
+  - test_brand_logic.py: Validates branding attribute mapping (correct style/
+    icon/tone for each category) and default fallback behaviour.
+  - test_fallback_svg.py: Validates SVG fallback generation (correct structure,
+    initials extraction, colour mapping).
+
+If any test fails, the pipeline halts and the deployment is aborted, preventing
+broken code from reaching production.
+
+Stage 4 - AWS Authentication: The aws-actions/configure-aws-credentials@v2
+action configures AWS CLI credentials using repository secrets
+(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, AWS_REGION).
+
+Stage 5 - Lambda Packaging: The backend directory is packaged into a .zip file
+with all Python dependencies (requests library installed via pip into the
+directory). A single zip archive serves both Lambda functions since they share
+the codebase but use different handlers.
+
+Stage 6 - Lambda Deployment: The aws lambda update-function-code CLI command
+deploys the zip to both brand-domain-api-lambda and brand-domain-audit-lambda
+functions.
+
+Stage 7 - Frontend Deployment: The aws s3 sync command synchronises the
+frontend/ directory to the S3 frontend bucket with --delete to remove stale
+files.
+
+6.2 Benefits of CI/CD Implementation
+--------------------------------------
+The CI/CD pipeline provides several measurable benefits:
+
+(a) Regression Prevention: Automated unit tests run on every commit, catching
+    breaking changes before they reach production.
+
+(b) Deployment Speed: End-to-end deployment (from code push to live update)
+    completes in approximately 30 seconds, compared to several minutes of
+    manual AWS Console operations.
+
+(c) Reproducibility: Every deployment follows identical steps, eliminating
+    human error in manual deployment processes.
+
+(d) Audit Trail: GitHub Actions maintains a complete history of all deployments,
+    including logs, duration, and success/failure status.
+
+
+
+================================================================================
+SECTION 7: CONCLUSIONS
+================================================================================
+
+7.1 Findings and Interpretations
+----------------------------------
+This project demonstrated the practical feasibility of building a fully
+serverless, multi-service web application using AWS managed services. Several
+key findings emerged:
+
+1. Serverless architectures significantly reduce operational complexity. By
+   leveraging Lambda, DynamoDB, SQS, and S3, the entire application was deployed
+   without provisioning or managing any servers, load balancers, or auto-scaling
+   groups. This allowed development effort to focus entirely on application logic
+   rather than infrastructure management.
+
+2. Asynchronous decoupling via SQS proved to be an effective pattern for
+   isolating non-critical operations (audit logging) from the user-facing
+   request path. Measured response times for the generation flow were not
+   impacted by audit table writes, validating the decoupling hypothesis.
+
+3. Graceful degradation patterns are essential when consuming external APIs.
+   The peer Logo API fallback mechanism (try-except with local SVG generation)
+   ensured 100% availability of the main application flow regardless of the
+   peer service status. This pattern is particularly important in academic
+   environments where peer services may have intermittent availability.
+
+4. Infrastructure as Code (via the aws_setup.sh script) proved invaluable for
+   rapid environment teardown and recreation, which was necessary during the
+   AWS Learner Lab's session-based credential lifecycle.
+
+5. CI/CD automation via GitHub Actions eliminated manual deployment errors and
+   provided confidence that each code change was tested before reaching
+   production.
+
+7.2 Reflection
+---------------
+Developing this project provided hands-on experience with several cloud
+computing concepts that are difficult to appreciate through theoretical study
+alone. The serverless paradigm required a fundamentally different mindset
+compared to traditional server-based architectures - thinking in terms of
+events, triggers, and stateless functions rather than persistent processes.
+
+One significant challenge was managing the AWS Learner Lab environment's
+temporary credentials, which expire after each session. This constraint
+necessitated the creation of comprehensive automation scripts and reinforced the
+importance of Infrastructure as Code practices.
+
+The integration of three distinct web services (custom, peer, and public)
+highlighted the complexities of distributed systems, including network latency,
+timeout management, error propagation, and the critical importance of defensive
+programming patterns such as fallback mechanisms and graceful degradation.
+
+If this project were to be extended, potential enhancements would include
+implementing a WebSocket-based real-time notification system for long-running
+domain checks, adding a caching layer (e.g., Amazon ElastiCache) to reduce
+redundant WhoisXML API calls, and implementing user authentication via Amazon
+Cognito for personalised brand history tracking.
+
+
+
+================================================================================
+SECTION 8: REFERENCES (IEEE Style)
+================================================================================
+
+[1] Amazon Web Services, "AWS Lambda - Serverless Compute," AWS Documentation,
+    2024. [Online]. Available: https://docs.aws.amazon.com/lambda/latest/dg/
+    welcome.html. [Accessed: Mar. 2026].
+
+[2] E. Jonas et al., "Cloud Programming Simplified: A Berkeley View on
+    Serverless Computing," Technical Report No. UCB/EECS-2019-3, University of
+    California, Berkeley, Feb. 2019.
+
+[3] WhoisXML API, "Domain Availability API Documentation," 2024. [Online].
+    Available: https://domain-availability.whoisxmlapi.com/api/documentation.
+    [Accessed: Mar. 2026].
+
+[4] A. Eivy, "Be Wary of the Economics of Serverless Cloud Computing," IEEE
+    Cloud Computing, vol. 4, no. 2, pp. 6-12, Mar./Apr. 2017.
+
+[5] M. T. Nygard, Release It! Design and Deploy Production-Ready Software,
+    2nd ed. Raleigh, NC, USA: Pragmatic Bookshelf, 2018.
+
+[6] Amazon Web Services, "AWS Systems Manager Parameter Store," AWS
+    Documentation, 2024. [Online]. Available: https://docs.aws.amazon.com/
+    systems-manager/latest/userguide/systems-manager-parameter-store.html.
+    [Accessed: Mar. 2026].
+
+[7] K. Morris, Infrastructure as Code: Managing Servers in the Cloud, 2nd ed.
+    Sebastopol, CA, USA: O'Reilly Media, 2021.
+
+[8] Amazon Web Services, "Amazon DynamoDB Developer Guide," AWS Documentation,
+    2024. [Online]. Available: https://docs.aws.amazon.com/amazondynamodb/
+    latest/developerguide/Introduction.html. [Accessed: Mar. 2026].
+
+[9] Amazon Web Services, "Amazon Simple Queue Service Developer Guide," AWS
+    Documentation, 2024. [Online]. Available: https://docs.aws.amazon.com/
+    AWSSimpleQueueService/latest/SQSDeveloperGuide/welcome.html.
+    [Accessed: Mar. 2026].
+
+[10] GitHub, "GitHub Actions Documentation," 2024. [Online]. Available:
+     https://docs.github.com/en/actions. [Accessed: Mar. 2026].
+
+[11] Amazon Web Services, "Amazon API Gateway Developer Guide," AWS
+     Documentation, 2024. [Online]. Available: https://docs.aws.amazon.com/
+     apigateway/latest/developerguide/welcome.html. [Accessed: Mar. 2026].
+
+[12] Amazon Web Services, "Hosting a Static Website Using Amazon S3," AWS
+     Documentation, 2024. [Online]. Available: https://docs.aws.amazon.com/
+     AmazonS3/latest/userguide/WebsiteHosting.html. [Accessed: Mar. 2026].

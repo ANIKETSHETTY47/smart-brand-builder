@@ -1,7 +1,15 @@
 import json
 import requests
 
-PEER_API_URL = "https://a8d7243bf24145feaaf7dd038977a69a.vfs.cloud9.us-east-1.amazonaws.com/api/logos/generate/"
+PEER_API_URL = "http://logo-generator-env-v2.eba-mtn7tphy.us-east-1.elasticbeanstalk.com/api/logos/generate/"
+
+# Color mapping for peer API integration
+STYLE_COLORS = {
+    "tech": {"primary": "#00d2ff", "secondary": "#0a1628"},
+    "bold": {"primary": "#ff4b1f", "secondary": "#1f1c2c"},
+    "corporate": {"primary": "#1d2b64", "secondary": "#f8cdda"},
+    "minimalist": {"primary": "#e0eafc", "secondary": "#cfdef3"}
+}
 
 def get_fallback_svg(company_name, style, icon_type):
     """Generates a simple, rule-based fallback SVG if the peer API fails."""
@@ -46,10 +54,15 @@ def generate_logo(company_name, style, icon_type):
     Calls the peer Logo Generator API synchronously.
     Graceful fallback: returns a placeholder SVG upon timeout or error.
     """
+    colors = STYLE_COLORS.get(style, {"primary": "#3B82F6", "secondary": "#1E3A5F"})
+    
     payload = {
         "company_name": company_name,
+        "tagline": "",
         "style": style,
-        "icon_type": icon_type
+        "icon_type": icon_type,
+        "primary_color": colors["primary"],
+        "secondary_color": colors["secondary"]
     }
     
     try:
