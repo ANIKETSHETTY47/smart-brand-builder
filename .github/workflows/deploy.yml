@@ -10,8 +10,8 @@ jobs:
     name: "Stage 1: Code Quality & Linting"
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v4
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: '3.11'
     - name: Install Dependencies
@@ -41,7 +41,8 @@ jobs:
       run: pip install bandit
     - name: Run Bandit SAST
       # -ll ignores low severity, -ii ignores low confidence
-      run: bandit -r backend/ -ll -ii
+      # Targeting backend/*.py specifically excludes 3rd-party pip installed packages (like requests)
+      run: bandit backend/*.py -ll -ii
 
   stage-3a-build-backend:
     name: "Stage 3a: Build Backend"
