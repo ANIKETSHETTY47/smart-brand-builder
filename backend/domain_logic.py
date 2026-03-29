@@ -16,6 +16,24 @@ def generate_domains(business_name):
     # Deduplicate while preserving order
     return list(dict.fromkeys(variations))
 
+def generate_more_domains(business_name):
+    """Generates an extended list of domain variations based on the business name."""
+    clean_name = re.sub(r'[^a-zA-Z0-9-]', '', business_name).lower()
+    clean_name_no_hyphen = clean_name.replace('-', '')
+    
+    variations = [
+        f"{clean_name}hq.com",
+        f"try{clean_name_no_hyphen}.com",
+        f"{clean_name_no_hyphen}global.com",
+        f"my{clean_name_no_hyphen}.com",
+        f"{clean_name}.net",
+        f"{clean_name}.co",
+        f"{clean_name}.ai",
+        f"{clean_name_no_hyphen}online.com"
+    ]
+    
+    return list(dict.fromkeys(variations))
+
 def score_and_sort_domains(domain_availabilities):
     """
     Scores domains based on rules and sorts them.

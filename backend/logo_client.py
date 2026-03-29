@@ -72,19 +72,19 @@ def generate_logo(company_name, style, icon_type, slogan=""):
     try:
         response = requests.post(PEER_API_URL, json=payload, timeout=15)
         
-        # If it's a 4xx or 5xx error, print the exact validation error from Django!
+        # If it's a 4xx or 5xx error, log the validation error but continue to fallback
         if not response.ok:
-            error_details = response.text
-            raise Exception(f"Peer API Error ({response.status_code}): {error_details} - Payload sent: {payload}")
+            print(f"Peer API Error ({response.status_code}): {response.text}")
+            return get_fallback_svg(company_name, style, icon_type)
             
         data = response.json()
         
         if "svg" in data and data["svg"]:
             return data["svg"]
         else:
-            raise Exception(f"Peer API returned no SVG data. Response was: {data}")
+            print("Warning: Peer API returned success but no SVG data. Using fallback.")
+            return get_fallback_svg(company_name, style, icon_type)
             
     except Exception as e:
-        # Fallback explicitly commented out to force error discovery
-        print(f"CRITICAL: Error calling Peer Logo API: {e}")
-        raise e
+        print(f"Error calling Peer Logo API: {e}. Falling back to placeholder.")
+        return get_fallback_svg(company_name, style, icon_type)

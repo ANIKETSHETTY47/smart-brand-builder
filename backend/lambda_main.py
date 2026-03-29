@@ -36,6 +36,18 @@ def lambda_handler(event, context):
             # Use the existing check_domains which returns a list of dicts
             result = domain_checker.check_domains([domain_to_check])
             return format_response(200, result[0])
+        elif action == 'more_domains':
+            business_name = body.get('business_name')
+            if not business_name:
+                return format_response(400, {"error": "Bad Request", "message": "business_name is required"})
+            
+            raw_domains = domain_logic.generate_more_domains(business_name)
+            
+            # Send them as unknown availability to bypass Whois checking all 8 at once
+            domain_results = [{'domain': d, 'available': None} for d in raw_domains]
+            suggested_domains = domain_logic.score_and_sort_domains(domain_results)
+            
+            return format_response(200, {"suggested_domains": suggested_domains})
             
         elif action == 'generate':
             business_name = body.get('business_name')

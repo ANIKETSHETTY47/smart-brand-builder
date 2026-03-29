@@ -6,29 +6,85 @@ on:
       - main
 
 jobs:
-  test-and-deploy:
+  stage-1-code-quality-and-linting:
+    name: "Stage 1: Code Quality & Linting"
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-
-    - name: Install Test Dependencies
+    - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pytest requests boto3
-
+        pip install pytest flake8 requests boto3
+    - name: Run Flake8 Static Analysis
+      run: |
+        # Warning checks only for syntax errors or undefined names to enforce quality without breaking style
+        flake8 backend/ --count --select=E9,F63,F7,F82 --show-source --statistics
     - name: Run Unit Tests
       env:
         PYTHONPATH: .
       run: |
         pytest tests/
 
+  stage-2-security-scanning-sast:
+    name: "Stage 2: Security Scanning & SAST"
+    needs: stage-1-code-quality-and-linting
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    - name: Install Bandit
+      run: pip install bandit
+    - name: Run Bandit SAST
+      # -ll ignores low severity, -ii ignores low confidence
+      run: bandit -r backend/ -ll -ii
+
+  stage-3a-build-backend:
+    name: "Stage 3a: Build Backend"
+    needs: stage-2-security-scanning-sast
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    - name: Package Lambdas
+      run: |
+        cd backend
+        pip install requests -t .
+        zip -r ../lambda_main.zip . -x "*__pycache__*"
+        cp ../lambda_main.zip ../lambda_audit.zip
+    - name: Upload Backend Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: backend-zips
+        path: |
+          lambda_main.zip
+          lambda_audit.zip
+
+  stage-3b-build-frontend:
+    name: "Stage 3b: Build Frontend"
+    needs: stage-2-security-scanning-sast
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Verify Frontend Structure
+      run: test -f frontend/index.html
+    - name: Upload Frontend Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: frontend-assets
+        path: frontend/
+
+  stage-4-deploy-to-aws:
+    name: "Stage 4: Deploy to AWS"
+    needs: [stage-3a-build-backend, stage-3b-build-frontend]
+    runs-on: ubuntu-latest
+    steps:
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
@@ -36,26 +92,24 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
         aws-region: ${{ secrets.AWS_REGION }}
-
-    - name: Package Lambdas
-      run: |
-        # Package Main Lambda
-        cd backend
-        pip install requests -t .
-        zip -r ../lambda_main.zip . -x "*__pycache__*"
         
-        # We can use the same zip for both functions if we want,
-        # but the assignment requests separate zip files. In this serverless micro-monolith structure,
-        # both lambdas share the file scope, but have different handlers
-        cp ../lambda_main.zip ../lambda_audit.zip
-        cd ..
-
+    - name: Download Backend Artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: backend-zips
+        
+    - name: Download Frontend Artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: frontend-assets
+        path: frontend
+        
     - name: Deploy Main Lambda
       run: |
         aws lambda update-function-code \
           --function-name brand-domain-api-lambda \
           --zip-file fileb://lambda_main.zip
-
+          
     - name: Deploy Audit Lambda
       run: |
         aws lambda update-function-code \

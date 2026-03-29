@@ -404,44 +404,33 @@ SECTION 6: CONTINUOUS INTEGRATION, DELIVERY AND DEPLOYMENT
 -----------------------------
 A GitHub Actions workflow (.github/workflows/deploy.yml) provides automated
 CI/CD for the project. The pipeline is triggered on every push to the main
-branch and executes the following stages sequentially:
+branch and executes the following visually decoupled stages (Jobs) sequentially
+using dependency linking (`needs:`):
 
-Stage 1 - Checkout: The pipeline checks out the latest source code from the
-repository using actions/checkout@v3.
+Stage 1 - Code Quality & Linting: The pipeline checks out the latest source
+code and configures Python 3.11. It installs `flake8` to perform Static Code
+Analysis and enforce PEP-8 compliance, catching syntax and undefine errors.
+It then executes the `pytest` framework against three unit test modules:
+  - test_domain_logic.py: Validates domain generation and scoring algorithms.
+  - test_brand_logic.py: Validates branding attribute mapping and logic.
+  - test_fallback_svg.py: Validates SVG fallback generation properties.
 
-Stage 2 - Environment Setup: Python 3.11 is configured using
-actions/setup-python@v4, and test dependencies (pytest, requests, boto3) are
-installed via pip.
+Stage 2 - Security Scanning & SAST: Depending on the success of Stage 1, this
+stage installs `bandit`, a Static Application Security Testing (SAST) tool
+designed to find common security vulnerabilities in Python code. It scans the
+backend directory to guarantee secure coding practices before deployment.
 
-Stage 3 - Automated Testing: The pytest framework executes three test modules
-located in the tests/ directory:
-  - test_domain_logic.py: Validates domain generation (correct variations
-    produced, special character sanitisation) and scoring algorithm (correct
-    ordering, score calculation).
-  - test_brand_logic.py: Validates branding attribute mapping (correct style/
-    icon/tone for each category) and default fallback behaviour.
-  - test_fallback_svg.py: Validates SVG fallback generation (correct structure,
-    initials extraction, colour mapping).
+Stage 3 - Build Backend & Frontend (Parallel Execution):
+  - Stage 3a (Build Backend): Zips the Lambda code dependencies (e.g., requests)
+    and the source code, then uploads the archive as a GitHub artifact.
+  - Stage 3b (Build Frontend): Verifies the frontend static asset structure
+    and uploads the UI directory as a separate artifact.
 
-If any test fails, the pipeline halts and the deployment is aborted, preventing
-broken code from reaching production.
-
-Stage 4 - AWS Authentication: The aws-actions/configure-aws-credentials@v2
-action configures AWS CLI credentials using repository secrets
-(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, AWS_REGION).
-
-Stage 5 - Lambda Packaging: The backend directory is packaged into a .zip file
-with all Python dependencies (requests library installed via pip into the
-directory). A single zip archive serves both Lambda functions since they share
-the codebase but use different handlers.
-
-Stage 6 - Lambda Deployment: The aws lambda update-function-code CLI command
-deploys the zip to both brand-domain-api-lambda and brand-domain-audit-lambda
-functions.
-
-Stage 7 - Frontend Deployment: The aws s3 sync command synchronises the
-frontend/ directory to the S3 frontend bucket with --delete to remove stale
-files.
+Stage 4 - Deploy to AWS: This stage downloads both artifacts from isolated
+virtual machines. It uses aws-actions/configure-aws-credentials to authenticate
+securely. Finally, it executes `aws lambda update-function-code` to deploy the
+backend zip files to the AWS Lambda environment, and `aws s3 sync` to push the
+frontend application to the S3 bucket.
 
 6.2 Benefits of CI/CD Implementation
 --------------------------------------

@@ -1,20 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Brand & Domain Builder</title>
     <style>
         :root {
-            --primary: #4F46E5;
-            --primary-hover: #4338CA;
-            --bg: #F3F4F6;
+            --primary: #111827;
+            --primary-hover: #374151;
+            --bg: #FAFAFA;
             --card-bg: #FFFFFF;
             --text-main: #111827;
             --text-muted: #6B7280;
             --border: #E5E7EB;
-            --success: #10B981;
-            --error: #EF4444;
+            --success: #059669;
+            --error: #DC2626;
+            --accent: #2563EB;
         }
 
         body {
@@ -37,23 +39,21 @@
 
         .card {
             background-color: var(--card-bg);
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border-radius: 4px;
+            border: 1px solid var(--border);
             padding: 2rem;
             margin-bottom: 2rem;
-            transition: all 0.3s ease;
+            box-shadow: none;
         }
 
         h1 {
-            font-size: 1.875rem;
-            font-weight: 700;
+            font-size: 1.75rem;
+            font-weight: 600;
             text-align: center;
             margin-top: 0;
             margin-bottom: 1.5rem;
-            background: linear-gradient(135deg, var(--primary), #ec4899);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: var(--primary);
+            letter-spacing: -0.025em;
         }
 
         .form-group {
@@ -71,14 +71,15 @@
             width: 100%;
             padding: 0.75rem;
             border: 1px solid var(--border);
-            border-radius: 8px;
+            border-radius: 4px;
             font-size: 1rem;
             outline: none;
             transition: border-color 0.2s;
             box-sizing: border-box;
         }
 
-        input[type="text"]:focus, select:focus {
+        input[type="text"]:focus,
+        select:focus {
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
@@ -89,9 +90,9 @@
             background-color: var(--primary);
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            font-weight: 500;
             cursor: pointer;
             transition: background-color 0.2s, transform 0.1s;
         }
@@ -105,8 +106,20 @@
         }
 
         button:disabled {
-            background-color: #9CA3AF;
+            background-color: var(--border);
+            color: var(--text-muted);
             cursor: not-allowed;
+        }
+        
+        button.btn-secondary {
+            background-color: transparent;
+            color: var(--primary);
+            border: 1px solid var(--border);
+            margin-top: 1rem;
+        }
+        
+        button.btn-secondary:hover {
+            background-color: #f9fafb;
         }
 
         /* Results section */
@@ -120,7 +133,7 @@
             grid-template-columns: 1fr 1fr;
             gap: 1.5rem;
         }
-        
+
         @media (max-width: 640px) {
             .grid {
                 grid-template-columns: 1fr;
@@ -128,8 +141,8 @@
         }
 
         .brand-attributes {
-            background: #f8fafc;
-            border-radius: 8px;
+            background: #ffffff;
+            border-radius: 4px;
             padding: 1.5rem;
             border: 1px solid var(--border);
         }
@@ -141,6 +154,7 @@
             padding-bottom: 0.75rem;
             border-bottom: 1px solid var(--border);
         }
+
         .attr-item:last-child {
             border-bottom: none;
             margin-bottom: 0;
@@ -161,12 +175,13 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: #f8fafc;
-            border-radius: 8px;
+            background: #ffffff;
+            border-radius: 4px;
             padding: 1.5rem;
-            border: 1px dashed var(--border);
+            border: 1px solid var(--border);
+            min-height: 150px;
         }
-        
+
         .logo-container svg {
             max-width: 100%;
             height: auto;
@@ -192,14 +207,19 @@
             padding: 1rem;
             background: #fff;
             border: 1px solid var(--border);
-            border-radius: 8px;
+            border-radius: 4px;
             margin-bottom: 0.75rem;
-            transition: transform 0.2s, box-shadow 0.2s;
         }
 
         .domain-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border-color: var(--text-muted);
+        }
+
+        .domain-item button {
+            background-color: var(--accent);
+        }
+        .domain-item button:hover {
+            background-color: #1d4ed8;
         }
 
         .domain-name {
@@ -253,222 +273,266 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
+
 <body>
 
-<div class="container">
-    <div class="card">
-        <h1>Smart Brand & Domain Builder</h1>
-        
-        <div id="error-box" class="error-message"></div>
-
-        <form id="brandForm">
-            <div class="form-group">
-                <label for="business_name">Business Name</label>
-                <input type="text" id="business_name" required placeholder="e.g. Nexus, Quantum Tech, FitLife...">
-            </div>
-            <div class="form-group">
-                <label for="slogan">Slogan / Tagline (Optional)</label>
-                <input type="text" id="slogan" placeholder="e.g. Innovating the future">
-            </div>
-            <div class="form-group">
-                <label for="category">Industry / Category</label>
-                <select id="category" required>
-                    <option value="" disabled selected>Select a category</option>
-                    <option value="technology">Technology</option>
-                    <option value="finance">Finance</option>
-                    <option value="fitness">Fitness</option>
-                    <option value="health">Health</option>
-                    <option value="food">Food & Beverage</option>
-                    <option value="education">Education</option>
-                    <option value="other">Other</option>
-                </select>
-            </div>
-            <button type="submit" id="submitBtn">Generate Brand Identity</button>
-        </form>
-    </div>
-
-    <div id="loading" class="loading card">
-        <div class="spinner"></div>
-        <p>Analyzing domains, generating branding, and designing logo...</p>
-    </div>
-
-    <div id="results">
-        <div class="grid">
-            <div class="card">
-                <h3>Brand Identity</h3>
-                <div class="brand-attributes">
-                    <div class="attr-item">
-                        <span class="attr-label">Style</span>
-                        <span class="attr-value" id="res-style">-</span>
-                    </div>
-                    <div class="attr-item">
-                        <span class="attr-label">Icon Type</span>
-                        <span class="attr-value" id="res-icon">-</span>
-                    </div>
-                    <div class="attr-item">
-                        <span class="attr-label">Tone</span>
-                        <span class="attr-value" id="res-tone">-</span>
-                    </div>
-                </div>
-            </div>
-            <div class="card">
-                <h3>Generated Logo</h3>
-                <div class="logo-container" id="res-logo">
-                    <!-- SVG will be injected here -->
-                </div>
-            </div>
-        </div>
-
+    <div class="container">
         <div class="card">
-            <h3>Domain Suggestions</h3>
-            <ul class="domain-list" id="res-domains">
-                <!-- Domain items injected here -->
-            </ul>
+            <h1>Smart Brand & Domain Builder</h1>
+
+            <div id="error-box" class="error-message"></div>
+
+            <form id="brandForm">
+                <div class="form-group">
+                    <label for="business_name">Business Name</label>
+                    <input type="text" id="business_name" required placeholder="e.g. Nexus, Quantum Tech, FitLife...">
+                </div>
+                <div class="form-group">
+                    <label for="slogan">Slogan / Tagline </label>
+                    <input type="text" id="slogan" placeholder="e.g. Innovating the future">
+                </div>
+                <div class="form-group">
+                    <label for="category">Industry / Category</label>
+                    <select id="category" required>
+                        <option value="" disabled selected>Select a category</option>
+                        <option value="technology">Technology</option>
+                        <option value="finance">Finance</option>
+                        <option value="fitness">Fitness</option>
+                        <option value="health">Health</option>
+                        <option value="food">Food & Beverage</option>
+                        <option value="education">Education</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <button type="submit" id="submitBtn">Generate Brand Identity</button>
+            </form>
+        </div>
+
+        <div id="loading" class="loading card">
+            <div class="spinner"></div>
+            <p>Analyzing domains, generating branding, and designing logo...</p>
+        </div>
+
+        <div id="results">
+            <div class="grid">
+                <div class="card">
+                    <h3>Brand Identity</h3>
+                    <div class="brand-attributes">
+                        <div class="attr-item">
+                            <span class="attr-label">Style</span>
+                            <span class="attr-value" id="res-style">-</span>
+                        </div>
+                        <div class="attr-item">
+                            <span class="attr-label">Icon Type</span>
+                            <span class="attr-value" id="res-icon">-</span>
+                        </div>
+                        <div class="attr-item">
+                            <span class="attr-label">Tone</span>
+                            <span class="attr-value" id="res-tone">-</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Generated Logo</h3>
+                    <div class="logo-container" id="res-logo">
+                        <!-- SVG will be injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Domain Suggestions</h3>
+                <ul class="domain-list" id="res-domains">
+                    <!-- Domain items injected here -->
+                </ul>
+                <button id="loadMoreBtn" type="button" class="btn-secondary" style="display: none;">Show More Domains</button>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-    // REPLACE WITH ACTUAL API GATEWAY URL AFTER DEPLOYMENT
-    const API_URL = 'https://amqf48tlgf.execute-api.us-east-1.amazonaws.com/prod/api/brand-domain/';
+    <script>
+        // REPLACE WITH ACTUAL API GATEWAY URL AFTER DEPLOYMENT
+        const API_URL = 'https://amqf48tlgf.execute-api.us-east-1.amazonaws.com/prod/api/brand-domain/';
 
-    const form = document.getElementById('brandForm');
-    const submitBtn = document.getElementById('submitBtn');
-    const loadingState = document.getElementById('loading');
-    const resultsContainer = document.getElementById('results');
-    const errorBox = document.getElementById('error-box');
-
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const businessName = document.getElementById('business_name').value.trim();
-        const slogan = document.getElementById('slogan').value.trim();
-        const category = document.getElementById('category').value;
-
-        if(!businessName || !category) return;
-
-        // Reset UI
-        errorBox.style.display = 'none';
-        resultsContainer.style.display = 'none';
-        loadingState.style.display = 'block';
-        submitBtn.disabled = true;
-
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    business_name: businessName,
-                    slogan: slogan,
-                    category: category
-                })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                // Determine whether it's our error structure or API Gateway generic failure
-                throw new Error(data.message || data.error || 'Failed to generate brand identity');
-            }
-
-            renderResults(data);
-            
-        } catch (err) {
-            errorBox.textContent = `Error: ${err.message}. Make sure the API Gateway URL is correct and deployed.`;
-            errorBox.style.display = 'block';
-        } finally {
-            loadingState.style.display = 'none';
-            submitBtn.disabled = false;
-        }
-    });
-
-    function renderResults(data) {
-        // Render Branding
-        document.getElementById('res-style').textContent = data.style;
-        document.getElementById('res-icon').textContent = data.icon_type;
-        document.getElementById('res-tone').textContent = data.brand_tone;
-
-        // Render Logo
-        document.getElementById('res-logo').innerHTML = data.logo_svg;
-
-        // Render Domains
+        const form = document.getElementById('brandForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const loadingState = document.getElementById('loading');
+        const resultsContainer = document.getElementById('results');
+        const errorBox = document.getElementById('error-box');
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
         const domainList = document.getElementById('res-domains');
-        domainList.innerHTML = '';
 
-        data.suggested_domains.forEach(d => {
-            const li = document.createElement('li');
-            li.className = 'domain-item';
-            
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'domain-name';
-            nameSpan.textContent = d.domain;
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-            const actionDiv = document.createElement('div');
-            
-            const statusSpan = document.createElement('span');
-            statusSpan.className = 'domain-status';
-            statusSpan.style.display = 'none';
+            const businessName = document.getElementById('business_name').value.trim();
+            const slogan = document.getElementById('slogan').value.trim();
+            const category = document.getElementById('category').value;
 
-            const checkBtn = document.createElement('button');
-            checkBtn.textContent = 'Check Availability';
-            // Override normal button styles for this small layout inline
-            checkBtn.style.padding = '0.35rem 0.75rem';
-            checkBtn.style.fontSize = '0.85rem';
-            checkBtn.style.width = 'auto'; 
-            checkBtn.style.margin = '0';
-            
-            checkBtn.onclick = async () => {
-                checkBtn.textContent = 'Checking...';
-                checkBtn.disabled = true;
-                try {
-                    const res = await fetch(API_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            action: 'check_domain',
-                            domain: d.domain
-                        })
-                    });
-                    const resultData = await res.json();
-                    
-                    if (!res.ok) throw new Error(resultData.message || "Failed");
-                    
-                    checkBtn.style.display = 'none';
-                    statusSpan.style.display = 'inline-flex';
-                    
-                    if (resultData.available) {
-                        statusSpan.className = 'domain-status status-available';
-                        statusSpan.textContent = 'Available';
-                    } else {
-                        statusSpan.className = 'domain-status status-unavailable';
-                        statusSpan.textContent = 'Taken';
-                    }
-                } catch (err) {
-                    checkBtn.textContent = 'Error (Retry)';
-                    checkBtn.disabled = false;
-                    console.error('Check failed:', err);
+            if (!businessName || !category) return;
+
+            // Reset UI
+            errorBox.style.display = 'none';
+            resultsContainer.style.display = 'none';
+            loadingState.style.display = 'block';
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        business_name: businessName,
+                        slogan: slogan,
+                        category: category
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    // Determine whether it's our error structure or API Gateway generic failure
+                    throw new Error(data.message || data.error || 'Failed to generate brand identity');
                 }
-            };
 
-            actionDiv.appendChild(checkBtn);
-            actionDiv.appendChild(statusSpan);
+                renderResults(data);
+                loadMoreBtn.style.display = 'block';
 
-            li.appendChild(nameSpan);
-            li.appendChild(actionDiv);
-            domainList.appendChild(li);
+            } catch (err) {
+                errorBox.textContent = `Error: ${err.message}. Make sure the API Gateway URL is correct and deployed.`;
+                errorBox.style.display = 'block';
+            } finally {
+                loadingState.style.display = 'none';
+                submitBtn.disabled = false;
+            }
         });
 
-        resultsContainer.style.display = 'block';
-    }
-</script>
+        function renderResults(data) {
+            // Render Branding
+            document.getElementById('res-style').textContent = data.style;
+            document.getElementById('res-icon').textContent = data.icon_type;
+            document.getElementById('res-tone').textContent = data.brand_tone;
+
+            // Render Logo
+            document.getElementById('res-logo').innerHTML = data.logo_svg;
+
+            // Render Domains
+            domainList.innerHTML = '';
+            appendDomains(data.suggested_domains);
+            resultsContainer.style.display = 'block';
+        }
+
+        function appendDomains(domains) {
+            domains.forEach(d => {
+                const li = document.createElement('li');
+                li.className = 'domain-item';
+
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'domain-name';
+                nameSpan.textContent = d.domain;
+
+                const actionDiv = document.createElement('div');
+
+                const statusSpan = document.createElement('span');
+                statusSpan.className = 'domain-status';
+                statusSpan.style.display = 'none';
+
+                const checkBtn = document.createElement('button');
+                checkBtn.textContent = 'Check Availability';
+                // Override normal button styles for this small layout inline
+                checkBtn.style.padding = '0.35rem 0.75rem';
+                checkBtn.style.fontSize = '0.85rem';
+                checkBtn.style.width = 'auto';
+                checkBtn.style.margin = '0';
+
+                checkBtn.onclick = async () => {
+                    checkBtn.textContent = 'Checking...';
+                    checkBtn.disabled = true;
+                    try {
+                        const res = await fetch(API_URL, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                action: 'check_domain',
+                                domain: d.domain
+                            })
+                        });
+                        const resultData = await res.json();
+
+                        if (!res.ok) throw new Error(resultData.message || "Failed");
+
+                        checkBtn.style.display = 'none';
+                        statusSpan.style.display = 'inline-flex';
+
+                        if (resultData.available) {
+                            statusSpan.className = 'domain-status status-available';
+                            statusSpan.textContent = 'Available';
+                        } else {
+                            statusSpan.className = 'domain-status status-unavailable';
+                            statusSpan.textContent = 'Taken';
+                        }
+                    } catch (err) {
+                        checkBtn.textContent = 'Error (Retry)';
+                        checkBtn.disabled = false;
+                        console.error('Check failed:', err);
+                    }
+                };
+
+                actionDiv.appendChild(checkBtn);
+                actionDiv.appendChild(statusSpan);
+
+                li.appendChild(nameSpan);
+                li.appendChild(actionDiv);
+                domainList.appendChild(li);
+            });
+        }
+
+        loadMoreBtn.addEventListener('click', async () => {
+            const businessName = document.getElementById('business_name').value.trim();
+            loadMoreBtn.textContent = 'Loading...';
+            loadMoreBtn.disabled = true;
+            
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'more_domains',
+                        business_name: businessName
+                    })
+                });
+                const resultData = await res.json();
+                
+                if (!res.ok) throw new Error(resultData.message || "Failed");
+                
+                appendDomains(resultData.suggested_domains);
+                loadMoreBtn.style.display = 'none'; // Only allow expanding once for UX simplicity
+            } catch (err) {
+                console.error('Failed to load more domains:', err);
+                loadMoreBtn.textContent = 'Error Loading More';
+            }
+        });
+    </script>
 
 </body>
+
 </html>
